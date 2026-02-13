@@ -625,7 +625,6 @@
 		static submitScriptEval(message) {
 			if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
 			try {
-				TestingConsole.error(message);
 				let evaluated = eval(message);
 				if (!evaluated) { return; }
 				Printer.enqueue(evaluated, 'script-eval');
