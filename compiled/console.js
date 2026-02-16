@@ -252,14 +252,16 @@
 		static #initiated = false;
 		static #isPrinting = false;
 		static #outputElement = undefined;
+		static #useAnimationFrameRequest = false;
 
 		static get #hasItems() { return Printer.#queue.length > 0; }
 		static get #nextItem() { return Printer.#queue.shift(); }
 
-		static init(outputElement) {
+		static init(outputElement, useAnimationFrameRequest = false) {
 			if (Printer.#initiated) { return; }
-			if (!outputElement)
-				throw new Error('Argument outputElement is null');
+			if (!(elem instanceof HTMLElement))
+				throw new Error('outputElement must be a instance of HTMLElement!');
+			Printer.#useAnimationFrameRequest = useAnimationFrameRequest;
 			Printer.#outputElement = outputElement;
 			Printer.#isPrinting = false;
 			Printer.#initiated = true;
@@ -296,9 +298,12 @@
 			// TODO: replace innerHTML += with appendChild
 			Printer.#outputElement.innerHTML += Printer.#getLine(item.shift());
 			DOMHelper.scrollToBottom();
-			//setTimeout(function() { Printer.#printItem(item); }, 144);
-			// TODO: consider->
-			requestAnimationFrame(() => Printer.#printItem(item));
+			if (Printer.#useAnimationFrameRequest) {
+				requestAnimationFrame(() => Printer.#printItem(item));
+			}
+			else {
+				setTimeout(function() { Printer.#printItem(item); }, 144);
+			}
 		}
 		static #getLine(itm) {
 			return `<br /><span class='${itm.type}'>${itm.txt}</span>`;
@@ -713,7 +718,7 @@
 		}
 
 		static help() {
-			
+
 		}
 
 		static #loadStylesheetFile(url) {
