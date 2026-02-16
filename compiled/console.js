@@ -259,7 +259,7 @@
 
 		static init(outputElement, useAnimationFrameRequest = false) {
 			if (Printer.#initiated) { return; }
-			if (!(elem instanceof HTMLElement))
+			if (!(outputElement instanceof HTMLElement))
 				throw new Error('outputElement must be a instance of HTMLElement!');
 			Printer.#useAnimationFrameRequest = useAnimationFrameRequest;
 			Printer.#outputElement = outputElement;
