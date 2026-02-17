@@ -294,11 +294,19 @@
 			if (!Printer.#initiated)
 				throw new Error('Printer not initiated!');
 			let msg = typeof message === 'object' && JSON && JSON.stringify
-				? JSON.stringify(message, null, 3)
+				? JSON.stringify(message, null, 2)
 				: `${message}`;
 			Printer.#queue.push(
 				msg.split('\n')
 				.map((ln) => ({ txt: ln, className: className, opts: options })));
+			if (!Printer.#isPrinting) { Printer.#print(); }
+		}
+		static enqueue2(msg) {
+			if (!Printer.#initiated)
+				throw new Error('Printer not initiated!');
+			Printer.#queue.push(
+				msg.message.split('\n')
+				.map((ln) => ({ txt: ln, opts: msg.options })));
 			if (!Printer.#isPrinting) { Printer.#print(); }
 		}
 		static #print() {
@@ -330,12 +338,25 @@
 				DOMHelper.addElement(
 					Printer.#outputElement,
 					"span",
-					Printer.#getItemAttributesMap(itm)),
+					Printer.#getItemAttributesMap2(itm)),
 				itm.txt);
 		}
 		static #getItemAttributesMap(itm) {
 			let attrMap = new Map([["classList", [itm.className]]]);
 			if (itm.opts && typeof itm.opts.style === 'string')
+				attrMap.set("style", itm.opts.style);
+			return attrMap;
+		}
+		static #getItemAttributesMap2(itm) {
+			let attrMap = new Map();
+			if (itm.className) {
+				attrMap.set("classList", [itm.className]);
+			}
+			if (itm.opts instanceof Map && itm.opts.size > 0) {
+				for (const [key, val] of itm.opts)
+					attrMap.set(key, val);
+			}
+			else if (itm.opts && typeof itm.opts.style === 'string')
 				attrMap.set("style", itm.opts.style);
 			return attrMap;
 		}
@@ -628,25 +649,43 @@
 			Printer.clear();
 			StdConsole.clear();
 		}
-		static log(message, options = undefined) {
+		static log(msg, options = undefined) {
 			if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
-			Printer.enqueue(message, 'log', options);
-			StdConsole.log(message);
+			Printer.enqueue(msg, 'log', options);
+			StdConsole.log(msg);
 		}
-		static info(message, options = undefined) {
+		static log2(...args) {
 			if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
-			Printer.enqueue(message, 'info', options);
-			StdConsole.info(message);
+			let msg = ConsoleArgsFormatter.format(args)
+			if (!msg.options)
+				msg.options = new Map();
+			msg.options.set("classList", ["log"]);
+			Printer.enqueue2(msg);
+			StdConsole.info(msg.message);
 		}
-		static warn(message, options = undefined) {
+		static info(msg, options = undefined) {
 			if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
-			Printer.enqueue(message, 'warn', options);
-			StdConsole.warn(message);
+			Printer.enqueue(msg, 'info', options);
+			StdConsole.info(msg);
 		}
-		static error(message, options = undefined) {
+		static info2(...args) {
 			if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
-			Printer.enqueue(message, 'error', options);
-			StdConsole.error(message);
+			let msg = ConsoleArgsFormatter.format(args)
+			if (!msg.options)
+				msg.options = new Map();
+			msg.options.set("classList", ["info"]);
+			Printer.enqueue2(msg);
+			StdConsole.info(msg.message);
+		}
+		static warn(msg, options = undefined) {
+			if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
+			Printer.enqueue(msg, 'warn', options);
+			StdConsole.warn(msg);
+		}
+		static error(msg, options = undefined) {
+			if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
+			Printer.enqueue(msg, 'error', options);
+			StdConsole.error(msg);
 		}
 		static submitText(message) {
 			if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
@@ -778,6 +817,48 @@
 		}
 	}
 
+	class ConsoleArgsFormatter {
+	  static format(...args) {
+	    if (args.length === 0) return;
+	    const [first, ...rest] = args;
+	    const last = rest && rest.length > 0 && rest[rest.length - 1] instanceof Map ? rest.pop() : undefined;
+	    const parts = [];
+	    if (typeof first === "string" && /%[sdifo]/.test(first)) {
+	      let i = 0;
+	      const formatted = first.replace(/%[sdifo]/g, () => {
+	        const val = rest[i++];
+	        return this.#formatArg(val);
+	      });
+	      parts.push(formatted);
+	      for (let j = i; j < rest.length; j++) {
+	        parts.push(this.#formatArg(rest[j]));
+	      }
+	    } else {
+	      parts.push(first);
+	      rest.forEach((arg, index) => {
+	        parts.push(this.#formatArg(arg));
+	      });
+	    }
+	    return { message: parts.join(' '), options: last };
+	  }
+	  static #formatArg(arg) {
+	    if (arg === null) return 'null';
+	    if (arg === undefined) return 'undefined';
+	    if (typeof arg === 'object') return this.#formatObj(arg);
+	    if (typeof arg === 'symbol') return arg.toString();
+	    if (typeof arg === 'function') return arg.toString();
+	    return String(arg);
+	  }
+	  static #formatObj(obj) {
+	    let objStr = JSON.stringify(obj, null, 2);
+	    objStr = objStr.replace(/\s+/g, ' ');
+	    objStr = objStr.replace(/"/g, "'");
+	    if (!Array.isArray(obj)) {
+	      objStr = objStr.replace(/'([^']+)':/g, '$1:');
+	    }
+	    return objStr;
+	  }
+	}
 
 	TestingConsole.init();
 
@@ -790,17 +871,23 @@
   console.clear = function () {
   	TestingConsole.clear();
   }
-  console.log = function (message, options = undefined) {
-		TestingConsole.log(message, options);
+  console.log = function (msg, options = undefined) {
+		TestingConsole.log(msg, options);
   }
-  console.info = function (message, options = undefined) {
-		TestingConsole.info(message, options);
+	console.log2 = function (...args) {
+		TestingConsole.log2(...args);
   }
-  console.warn = function (message, options = undefined) {
-		TestingConsole.warn(message, options);
+  console.info = function (msg, options = undefined) {
+		TestingConsole.info(msg, options);
   }
-  console.error = function (message, options = undefined) {
-		TestingConsole.error(message, options);
+	console.info2 = function (...args) {
+		TestingConsole.info2(...args);
+  }
+  console.warn = function (msg, options = undefined) {
+		TestingConsole.warn(msg, options);
+  }
+  console.error = function (msg, options = undefined) {
+		TestingConsole.error(msg, options);
   }
 	console.useTimeouts = function () {
 		Printer.useTimeouts();
