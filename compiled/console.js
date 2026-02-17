@@ -114,7 +114,8 @@
 			return DOMHelper.getElement(tagName, attributesMap) !== null;
 		}
 		static createElement(tagName, attributesMap = undefined, listenersMap = undefined) {
-			if (DOMHelper.elementExists(tagName, attributesMap)) return null;
+			if (attributesMap?.has("id") && DOMHelper.elementExists(tagName, attributesMap))
+				return null;
 			let elem = document.createElement(tagName);
 			if (elem instanceof HTMLUnknownElement)
 				throw new Error("tagName must be a valid HTML tag name!");
@@ -138,6 +139,12 @@
 			if (!(targetElement instanceof HTMLElement))
 				throw new Error("targetElement must be an instance of HTMLElement!");
 			return targetElement.removeChild(elemToRemove);
+		}
+
+		static addTextNode(targetElement, text) {
+			if (!(targetElement instanceof HTMLElement))
+				throw new Error("targetElement must be an instance of HTMLElement!");
+			return targetElement.appendChild(document.createTextNode(text));
 		}
 
 		static addListener(elem, name, listener) {
@@ -267,21 +274,31 @@
 			Printer.#initiated = true;
 		}
 
+		static useTimeouts() {
+			if (!Printer.#useAnimationFrameRequest) return false;
+			Printer.#useAnimationFrameRequest = false;
+			return true;
+		}
+		static useAnimations() {
+			if (Printer.#useAnimationFrameRequest) return false;
+			Printer.#useAnimationFrameRequest = true;
+			return true;
+		}
+
 		static clear() {
 			if (!Printer.#initiated)
 				throw new Error('Printer not initiated!');
 			Printer.#outputElement.innerHTML = "";
 		}
-		static enqueue(message, logType) {
+		static enqueue(message, className, options = undefined) {
 			if (!Printer.#initiated)
 				throw new Error('Printer not initiated!');
 			let msg = typeof message === 'object' && JSON && JSON.stringify
 				? JSON.stringify(message, null, 3)
 				: `${message}`;
-
 			Printer.#queue.push(
 				msg.split('\n')
-				.map((ln) => ({ txt: ln, type: logType })));
+				.map((ln) => ({ txt: ln, className: className, opts: options })));
 			if (!Printer.#isPrinting) { Printer.#print(); }
 		}
 		static #print() {
@@ -295,8 +312,8 @@
 				setTimeout(function() { Printer.#print(); }, 369);
 				return;
 			}
-			// TODO: replace innerHTML += with appendChild
-			Printer.#outputElement.innerHTML += Printer.#getLine(item.shift());
+			Printer.#addNewLine();
+			Printer.#addTextItem(item.shift());
 			DOMHelper.scrollToBottom();
 			if (Printer.#useAnimationFrameRequest) {
 				requestAnimationFrame(() => Printer.#printItem(item));
@@ -305,8 +322,22 @@
 				setTimeout(function() { Printer.#printItem(item); }, 144);
 			}
 		}
-		static #getLine(itm) {
-			return `<br /><span class='${itm.type}'>${itm.txt}</span>`;
+		static #addNewLine() {
+			DOMHelper.addElement(Printer.#outputElement, "br")
+		}
+		static #addTextItem(itm) {
+			DOMHelper.addTextNode(
+				DOMHelper.addElement(
+					Printer.#outputElement,
+					"span",
+					Printer.#getItemAttributesMap(itm)),
+				itm.txt);
+		}
+		static #getItemAttributesMap(itm) {
+			let attrMap = new Map([["classList", [itm.className]]]);
+			if (itm.opts && typeof itm.opts.style === 'string')
+				attrMap.set("style", itm.opts.style);
+			return attrMap;
 		}
 	}
 
@@ -587,7 +618,7 @@
 			TestingConsole.#loadedStylesheets = [];
 			StdConsole.init();
 			TCUIController.init(TestingConsole.submit);
-			Printer.init(TCUIController.contentElement);
+			Printer.init(TCUIController.contentElement, true);
 			console.log("Init complete!");
 			TestingConsole.#initiated = true;
 		}
@@ -597,24 +628,24 @@
 			Printer.clear();
 			StdConsole.clear();
 		}
-		static log(message) {
+		static log(message, options = undefined) {
 			if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
-			Printer.enqueue(message, 'log');
+			Printer.enqueue(message, 'log', options);
 			StdConsole.log(message);
 		}
-		static info(message) {
+		static info(message, options = undefined) {
 			if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
-			Printer.enqueue(message, 'info');
+			Printer.enqueue(message, 'info', options);
 			StdConsole.info(message);
 		}
-		static warn(message) {
+		static warn(message, options = undefined) {
 			if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
-			Printer.enqueue(message, 'warn');
+			Printer.enqueue(message, 'warn', options);
 			StdConsole.warn(message);
 		}
-		static error(message) {
+		static error(message, options = undefined) {
 			if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
-			Printer.enqueue(message, 'error');
+			Printer.enqueue(message, 'error', options);
 			StdConsole.error(message);
 		}
 		static submitText(message) {
@@ -717,10 +748,6 @@
 			return retval;
 		}
 
-		static help() {
-
-		}
-
 		static #loadStylesheetFile(url) {
 			if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
 			const linkElement = document.createElement('link');
@@ -754,33 +781,35 @@
 
 	TestingConsole.init();
 
+	console.help = function () {
+		return help();
+	}
+	console.init = function () {
+		TestingConsole.init();
+	}
   console.clear = function () {
   	TestingConsole.clear();
   }
-  console.log = function (message) {
-		TestingConsole.log(message);
+  console.log = function (message, options = undefined) {
+		TestingConsole.log(message, options);
   }
-  console.info = function (message) {
-		TestingConsole.info(message);
+  console.info = function (message, options = undefined) {
+		TestingConsole.info(message, options);
   }
-  console.warn = function (message) {
-		TestingConsole.warn(message);
+  console.warn = function (message, options = undefined) {
+		TestingConsole.warn(message, options);
   }
-  console.error = function (message) {
-		TestingConsole.error(message);
+  console.error = function (message, options = undefined) {
+		TestingConsole.error(message, options);
   }
-  console.submitText = function (message) {
-		TestingConsole.log(message);
-  }
-  console.submitScript = function (message) {
-		TestingConsole.log(message);
-  }
-  console.submitScriptEval = function (message) {
-		TestingConsole.log(message);
-  }
-  console.submit = function (message) {
-		TestingConsole.submit(message);
-  }
+	console.useTimeouts = function () {
+		Printer.useTimeouts();
+		console.log("Printing with timeouts.")
+	}
+	console.useAnimations = function () {
+		Printer.useAnimations();
+		console.log("Printing with animations.")
+	}
 
   loadScript = function (url, callback) {
   	TestingConsole.loadScript(url, callback);
@@ -809,7 +838,27 @@
 	listStylesheets = function () {
 		return TestingConsole.listModules();
 	}
+
 	help = function () {
-		return
+		const availableFunctions = [];
+		availableFunctions.push('help()');
+		availableFunctions.push('console.init()');
+		availableFunctions.push('console.clear()');
+		availableFunctions.push('console.log(msg, opts?)');
+		availableFunctions.push('console.info(msg, opts?)');
+		availableFunctions.push('console.warn(msg, opts?)');
+		availableFunctions.push('console.error(msg, opts?)');
+		availableFunctions.push('console.useTimeouts()');
+		availableFunctions.push('console.useAnimations()');
+		availableFunctions.push('loadScript(url)');
+		availableFunctions.push('listScripts()');
+		availableFunctions.push('reloadScript(index)');
+		availableFunctions.push('loadModule(url)');
+		availableFunctions.push('listModules()');
+		availableFunctions.push('reloadModule(index)');
+		availableFunctions.push('loadStylesheet(url)');
+		availableFunctions.push('listStylesheets()');
+		availableFunctions.push('reloadStylesheet(index)');
+		return `Available functions:\n${availableFunctions.join("\n")}`;
 	}
 })();
