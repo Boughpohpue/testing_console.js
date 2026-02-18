@@ -174,7 +174,7 @@ MIT License — free to use, modify, and share.
 Floow links below and see **TestingConsole** examples in action:
 
 *  **Potions Brewery**:  https://boughpohpue.github.io/brewery/test_compiled/test.html
-*  **JFATHER**:          https://boughpohpue.github.io/jfather.js/test_compiled/test.html
-*  **Just Reflector**:   https://boughpohpue.github.io/just.js/test_compiled/reflector_test.html
+*  **JFATHER**:          https://boughpohpue.github.io/jfather.js/tests/compiled/test.html
+*  **Just Reflector**:   https://boughpohpue.github.io/just.js/tests/compiled/reflector_test.html
 
 ---
