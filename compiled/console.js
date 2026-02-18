@@ -783,36 +783,43 @@
 	  static #formatArgs(args) {
 	    if (args.length === 0) return;
 	    const [first, ...rest] = args;
-	    const opts = rest.length > 0 && rest[rest.length - 1] instanceof Map ? rest.pop() : new Map();
+	    const opts = rest.length > 0 && rest[rest.length - 1] instanceof Map
+				? rest.pop()
+				: new Map();
+			const breakLines = opts.has("breaklines")
+				&& typeof opts.get("breaklines") === "boolean"
+				? opts.get("breaklines")
+				: false;
 	    const msgParts = [];
-	    if (typeof first === "string" && /%[sdifo]/.test(first)) {
+	    if (typeof first === "string" && /%[sdifoO]/.test(first)) {
 	      let i = 0;
-	      const formatted = first.replace(/%[sdifo]/g, () => {
+	      const formatted = first.replace(/%[sdifoO]/g, () => {
 	        const val = rest[i++];
-	        return this.#formatArg(val);
+	        return this.#formatArg(val, breakLines);
 	      });
 	      msgParts.push(formatted);
 	      for (let j = i; j < rest.length; j++) {
-	        msgParts.push(this.#formatArg(rest[j]));
+	        msgParts.push(this.#formatArg(rest[j], breakLines));
 	      }
 	    } else {
-	      msgParts.push(this.#formatArg(first));
-	      rest.forEach((arg) => { msgParts.push(this.#formatArg(arg)); });
+	      msgParts.push(this.#formatArg(first, breakLines));
+	      rest.forEach((arg) => msgParts.push(this.#formatArg(arg, breakLines)));
 	    }
 	    return this.#getMessageObj(msgParts.join(' '),  opts);
 	  }
-	  static #formatArg(arg) {
+	  static #formatArg(arg, breakLines = false) {
 	    if (arg === null) return 'null';
 	    if (arg === undefined) return 'undefined';
-	    if (typeof arg === 'object') return this.#formatObj(arg);
+	    if (typeof arg === 'object') return this.#formatObj(arg, breakLines);
 	    if (typeof arg === 'symbol') return arg.toString();
 	    if (typeof arg === 'function') return arg.toString();
 	    return String(arg);
 	  }
-	  static #formatObj(obj) {
+		static #formatObj(obj, breakLines = false) {
 	    let objStr = JSON.stringify(obj, null, 2);
-	    objStr = objStr.replace(/\s+/g, ' ');
 	    objStr = objStr.replace(/"/g, "'");
+	    if (!breakLines)
+	      objStr = objStr.replace(/\s+/g, ' ');
 	    if (!Array.isArray(obj))
 	      objStr = objStr.replace(/'([^']+)':/g, '$1:');
 	    return objStr;

@@ -20,6 +20,22 @@
 
 ### Include in HTML
 
+* **As a regular script**:
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TestingConsole Example</title>
+</head>
+  <body>
+    <script src='https://boughpohpue.github.io/testing_console.js/compiled/console.js'></script>
+	<script>console.loadModule('test.js');</script>
+  </body>
+</html>
+```
+
+* **As a script module**:
 ```html
 <!DOCTYPE html>
 <html lang="en">
@@ -45,15 +61,28 @@ console.log("Hello world", { key: "value" }, [1,2,3]);
 console.info("Info message");
 console.warn("Warning!");
 console.error("Error message");
-
-// Custom styles per log (must be a Map)
-console.warn("Styled warning", new Map([["style", "color: antiquewhite; text-shadow: 3px 3px #708090;"]]));
 ```
 
 ✅ Supports formatting:
-
 ```js
 console.log("Hello %s, your score is %d", "Alice", 42);
+```
+
+---
+
+## 🛠️ Custom options:
+
+Methods log, info, warn and error might be slightly personalized.
+In that case provide custom configuration as a last argument (it must be a Map).
+
+*  **Custom styling**:
+```js
+console.warn("Styled warning", new Map([["style", "color: antiquewhite; text-shadow: 3px 3px #708090;"]]));
+```
+
+*  **Preserve line breaking**:
+```js
+console.log(someObject, new Map([["breaklines", true]]));
 ```
 
 ---
@@ -94,10 +123,12 @@ console.listModules();
 ## ✨ Other Useful Methods
 
 ```js
-console.clear();                  // Clear console output
+console.help();                    // Show all available console methods
+console.clear();                   // Clear console output
 console.printUsingTimeouts();      // Use setTimeout for printing
 console.printUsingAnimations();    // Use requestAnimationFrame
-console.help();                    // Show all available console methods
+console.enableStdConsole();        // Enable showing output also on standard js console
+console.disableStdConsole();       // Disable standard js console
 ```
 
 ---
@@ -116,7 +147,7 @@ Default classes:
 }
 ```
 
-Override styles dynamically per log with a `Map`:
+Override styles dynamically per log with a config `Map`:
 
 ```js
 console.log("Custom style", new Map([["style", "color: gold; font-weight: bold;"]]));
@@ -135,5 +166,15 @@ console.log("Custom style", new Map([["style", "color: gold; font-weight: bold;"
 ## 📝 License
 
 MIT License — free to use, modify, and share.
+
+---
+
+## 🔬 Examples
+
+Floow links below and see **TestingConsole** examples in action:
+
+*  **Potions Brewery**:  https://boughpohpue.github.io/brewery/test_compiled/test.html
+*  **JFATHER**:          https://boughpohpue.github.io/jfather.js/test_compiled/test.html
+*  **Just Reflector**:   https://boughpohpue.github.io/just.js/test_compiled/reflector_test.html
 
 ---
