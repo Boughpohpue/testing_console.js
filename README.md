@@ -58,9 +58,17 @@ console.log("Hello %s, your score is %d", "Alice", 42);
 
 ---
 
+## 🖥️ Live Command Execution
+
+You can also run commands directly from the browser window after the page has loaded. 
+Press Enter to reveal the input area, then type any JavaScript command and submit it. 
+This includes all console.* methods, as well as quick expressions.
+
+---
+
 ## ⚡ Script Evaluation
 
-Prefix a line with `=>` to evaluate it in the console:
+Prefix your submission with `=>` to evaluate it in the console:
 
 ```js
 => 2 + 2
