@@ -393,12 +393,13 @@
 	    this.#userInputSubmitFn = uiSubmitFn;
 	    this.#addViewportElement();
 	    this.#addStylesLinkElement();
+			this.#addHeaderElement();
 	    this.#addOutputElement();
 	    this.#contentElement = DOMHelper.getElementById('log_content');
 	    if (typeof this.#userInputSubmitFn === "function") {
 	      this.#addInputElement();
 	      this.#userInputElement = DOMHelper.getElementById('user_input');
-	      DOMHelper.addListener(DOMHelper.body, "keyup", this.#onBodyKeyUp);
+	      DOMHelper.addListener(DOMHelper.body, "keyup", DOMController.#onBodyKeyUp);
 	    }
 	  }
 
@@ -425,6 +426,21 @@
 	        ["type", "text/css"],
 	        ["rel", "stylesheet"]]));
 	  }
+		static #addHeaderElement() {
+			DOMHelper.addTextNode(
+		    DOMHelper.addElement(
+		      DOMHelper.addElement(
+		        document.body,
+		        "div",
+		        new Map([
+		          ["id", "console_header"],
+		          ["classList", ["console-header"]]])),
+		      "pre",
+		      new Map([
+		        ["id", "header_content"],
+		        ["classList", ["header-content"]]])),
+		    this.#getHeaderText());
+	  }
 	  static #addOutputElement() {
 	    DOMHelper.addElement(
 	      DOMHelper.addElement(
@@ -448,42 +464,40 @@
 	        ["spellcheck", "false"],
 	        ["classList", ["user-input", "user-input-text", "user-input-hidden"]]]),
 	      new Map([
-	        ["keyup", this.#onInputElementKeyUp],
-	        ["focusout", this.#onInputElementFocusOut]]));
+	        ["keyup", DOMController.#onInputElementKeyUp],
+	        ["focusout", DOMController.#onInputElementFocusOut]]));
 	  }
 
 	  static #onBodyKeyUp(e) {
 	    if (e.key === 'Enter'
-	      && this.#inputElem.classList.contains('user-input-hidden')) {
-	        this.#showUserInputElement();
+	      && DOMController.#inputElem.classList.contains('user-input-hidden')) {
+	        DOMController.#showUserInputElement();
 	    }
 	  }
 	  static #onInputElementKeyUp(e) {
-	    this.#handleInputKey(e.key);
+	    DOMController.#handleInputKey(e.key);
 	  }
 	  static #onInputElementFocusOut() {
-	    this.#hideUserInputElement();
+	    DOMController.#hideUserInputElement();
 	  }
 
 	  static #showUserInputElement() {
-	    if (!this.#inputElem.classList.contains('user-input-hidden'))
+	    if (!DOMController.#inputElem.classList.contains('user-input-hidden'))
 	    { return; }
-	    this.#inputElem.classList.remove('user-input-hidden');
-	    this.#orderHideUserInputElement();
-	    DOMHelper.focusElement(this.#inputElem);
+	    DOMController.#inputElem.classList.remove('user-input-hidden');
+	    DOMHelper.focusElement(DOMController.#inputElem);
 	    DOMHelper.orderScrollToBottom();
 	  }
 	  static #hideUserInputElement() {
-	    if (this.#inputElemValue.length > 0
-	      || this.#inputElem.classList.contains('user-input-hidden')) {
+	    if (DOMController.#inputElem.classList.contains('user-input-hidden')) {
 	      return;
 	    }
-	    this.#inputElem.classList.add('user-input-hidden');
-	    DOMHelper.orderScrollToBottom();
-	    DOMHelper.focusElement(document.body);
+	    DOMController.#inputElem.classList.add('user-input-hidden');
+			DOMHelper.focusElement(document.body);
+			DOMHelper.orderScrollToBottom();
 	  }
 	  static #orderHideUserInputElement() {
-	    setTimeout(this.#hideUserInputElement, 9369);
+	    setTimeout(() => DOMController.#hideUserInputElement(), 9369);
 	  }
 
 	  static #handleInputKey(key) {
@@ -559,6 +573,14 @@
 	    this.#inputElem.classList.toggle('user-input-script');
 	    DOMHelper.orderScrollToBottom();
 	  }
+
+		static #getHeaderText() {
+			const headerText =
+`██████ ▄▄▄▄▄  ▄▄▄▄ ▄▄▄▄▄▄ ▄▄ ▄▄  ▄▄  ▄▄▄▄   ▄█████  ▄▄▄  ▄▄  ▄▄  ▄▄▄▄  ▄▄▄  ▄▄    ▄▄▄▄▄
+  ██   ██▄▄  ███▄▄   ██   ██ ███▄██ ██ ▄▄   ██     ██▀██ ███▄██ ███▄▄ ██▀██ ██    ██▄▄
+  ██   ██▄▄▄ ▄▄██▀   ██   ██ ██ ▀██ ▀███▀   ▀█████ ▀███▀ ██ ▀██ ▄▄██▀ ▀███▀ ██▄▄▄ ██▄▄▄  by infertus`;
+			return headerText;
+		}
 	}
 
 	class TestingConsole {
@@ -620,14 +642,14 @@
 	  }
 	  static #submitText(message) {
 	    if (!this.#initiated) { throw new Error("TestingConsole not initiated!"); }
-	    let msg = this.#formatArgs(message);
+	    let msg = this.#getMessageObj(message);
 	    msg.options.set("classList", ["text"]);
 	    Printer.enqueue(msg);
 	    StdConsoleHandler.log(msg.message);
 	  }
 	  static #submitScript(message) {
 	    if (!this.#initiated) { throw new Error("TestingConsole not initiated!"); }
-	    let msg = this.#formatArgs(message);
+	    let msg = this.#getMessageObj(message);
 	    msg.options.set("classList", ["script"]);
 	    Printer.enqueue(msg);
 	    StdConsoleHandler.log(msg.message);
@@ -638,7 +660,7 @@
 	      let evaluated = eval(message);
 	      //let evaluated = new Function(message)();
 	      if (!evaluated) { return; }
-	      let msg = this.#formatArgs(evaluated);
+	      let msg = this.#getMessageObj(`=> ${evaluated}`);
 	      msg.options.set("classList", ["script-eval"]);
 	      Printer.enqueue(msg);
 	      StdConsoleHandler.log(msg.message);
@@ -647,15 +669,15 @@
 	    }
 	  }
 	  static #submit(message) {
-	    if (!this.#initiated) { throw new Error("TestingConsole not initiated!"); }
+	    if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
 	    if (!TextHelper.isScript(message)) {
-	      this.#submitText(message);
+	      TestingConsole.#submitText(message);
 	      return;
 	    }
 	    let scriptBody = TextHelper.getScriptBody(message);
 	    if (scriptBody.length === 0) { return; }
-	    this.submitScript(scriptBody);
-	    this.submitScriptEval(scriptBody);
+	    TestingConsole.#submitScript(scriptBody);
+	    TestingConsole.#submitScriptEval(scriptBody);
 	  }
 
 	  static #loadScript(url, callback) {
@@ -754,6 +776,10 @@
 	    }
 	  }
 
+		static #getMessageObj(message, options = undefined) {
+			const opts = options instanceof Map ? options : new Map();
+			return { message: message, options: opts };
+		}
 	  static #formatArgs(args) {
 	    if (args.length === 0) return;
 	    const [first, ...rest] = args;
@@ -773,7 +799,7 @@
 	      msgParts.push(this.#formatArg(first));
 	      rest.forEach((arg) => { msgParts.push(this.#formatArg(arg)); });
 	    }
-	    return { message: msgParts.join(' '), options: opts };
+	    return this.#getMessageObj(msgParts.join(' '),  opts);
 	  }
 	  static #formatArg(arg) {
 	    if (arg === null) return 'null';

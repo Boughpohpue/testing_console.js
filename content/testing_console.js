@@ -9,18 +9,17 @@ export class TestingConsole {
   static #loadedStylesheets = [];
 
   static init(stdEnabled = false) {
-    if (TestingConsole.#initiated) { return; }
-    console.log("Initializing TestingConsole...");
-    TestingConsole.#loadedScripts = [];
-    TestingConsole.#loadedStylesheets = [];
+    if (this.#initiated) { return; }
+    console.log("Initializing this...");
+    this.#loadedScripts = [];
+    this.#loadedStylesheets = [];
     StdConsoleHandler.init(true);
-    TestingConsole.#overrideConsole();
-    DOMController.init(TestingConsole.#submit);
+    this.#overrideConsole();
+    DOMController.init(this.#submit);
     Printer.init(DOMController.contentElement, true);
     StdConsoleHandler.log("TestingConsole initiated!");
-    if (!stdEnabled) TestingConsole.#disableStdConsole();
-    TestingConsole.#initiated = true;
-    return Promise.resolve();
+    if (!stdEnabled) this.#disableStdConsole();
+    this.#initiated = true;
   }
 
   static #enableStdConsole() { StdConsoleHandler.enable(); }
@@ -29,64 +28,64 @@ export class TestingConsole {
   static #printUsingAnimations() { Printer.useAnimations(); }
 
   static #clear() {
-    if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
+    if (!this.#initiated) { throw new Error("TestingConsole not initiated!"); }
     Printer.clear();
     StdConsoleHandler.clear();
   }
   static #log(args) {
-    if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
-    let msg = TestingConsole.#formatArgs(args);
+    if (!this.#initiated) { throw new Error("TestingConsole not initiated!"); }
+    let msg = this.#formatArgs(args);
     msg.options.set("classList", ["log"]);
     Printer.enqueue(msg);
     StdConsoleHandler.info(msg.message);
   }
   static #info(args) {
-    if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
-    let msg = TestingConsole.#formatArgs(args);
+    if (!this.#initiated) { throw new Error("TestingConsole not initiated!"); }
+    let msg = this.#formatArgs(args);
     msg.options.set("classList", ["info"]);
     Printer.enqueue(msg);
     StdConsoleHandler.info(msg.message);
   }
   static #warn(args) {
-    if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
-    let msg = TestingConsole.#formatArgs(args);
+    if (!this.#initiated) { throw new Error("TestingConsole not initiated!"); }
+    let msg = this.#formatArgs(args);
     msg.options.set("classList", ["warn"]);
     Printer.enqueue(msg);
     StdConsoleHandler.warn(msg.message);
   }
   static #error(args) {
-    if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
-    let msg = TestingConsole.#formatArgs(args);
+    if (!this.#initiated) { throw new Error("TestingConsole not initiated!"); }
+    let msg = this.#formatArgs(args);
     msg.options.set("classList", ["error"]);
     Printer.enqueue(msg);
     StdConsoleHandler.error(msg.message);
   }
   static #submitText(message) {
-    if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
-    let msg = TestingConsole.#formatArgs(message);
+    if (!this.#initiated) { throw new Error("TestingConsole not initiated!"); }
+    let msg = this.#getMessageObj(message);
     msg.options.set("classList", ["text"]);
     Printer.enqueue(msg);
     StdConsoleHandler.log(msg.message);
   }
   static #submitScript(message) {
-    if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
-    let msg = TestingConsole.#formatArgs(message);
+    if (!this.#initiated) { throw new Error("TestingConsole not initiated!"); }
+    let msg = this.#getMessageObj(message);
     msg.options.set("classList", ["script"]);
     Printer.enqueue(msg);
     StdConsoleHandler.log(msg.message);
   }
   static #submitScriptEval(message) {
-    if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
+    if (!this.#initiated) { throw new Error("TestingConsole not initiated!"); }
     try {
       let evaluated = eval(message);
       //let evaluated = new Function(message)();
       if (!evaluated) { return; }
-      let msg = TestingConsole.#formatArgs(evaluated);
+      let msg = this.#getMessageObj(`=> ${evaluated}`);
       msg.options.set("classList", ["script-eval"]);
       Printer.enqueue(msg);
       StdConsoleHandler.log(msg.message);
     } catch (e) {
-      TestingConsole.#error(e.message);
+      this.#error(e.message);
     }
   }
   static #submit(message) {
@@ -97,26 +96,26 @@ export class TestingConsole {
     }
     let scriptBody = TextHelper.getScriptBody(message);
     if (scriptBody.length === 0) { return; }
-    TestingConsole.submitScript(scriptBody);
-    TestingConsole.submitScriptEval(scriptBody);
+    TestingConsole.#submitScript(scriptBody);
+    TestingConsole.#submitScriptEval(scriptBody);
   }
 
   static #loadScript(url, callback) {
-    if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
-    TestingConsole.#loadScriptFile(url, 'text/javascript', callback);
+    if (!this.#initiated) { throw new Error("TestingConsole not initiated!"); }
+    this.#loadScriptFile(url, 'text/javascript', callback);
   }
   static #reloadScript(index) {
-    if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
-    let scripts = TestingConsole.#loadedScripts.filter(s => s.type !== 'module');
+    if (!this.#initiated) { throw new Error("TestingConsole not initiated!"); }
+    let scripts = this.#loadedScripts.filter(s => s.type !== 'module');
     if (index <= 0 || index > scripts.length) {
       return 'Script index is out of range!';
     }
     let script = scripts[index - 1];
-    return TestingConsole.loadScript(script.src);
+    return this.loadScript(script.src);
   }
   static #listScripts() {
-    if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
-    let scripts = TestingConsole.#loadedScripts.filter(s => s.type !== 'module').map(m => m.src);
+    if (!this.#initiated) { throw new Error("TestingConsole not initiated!"); }
+    let scripts = this.#loadedScripts.filter(s => s.type !== 'module').map(m => m.src);
     let retval = `Loaded scripts (${scripts.length}):`;
     for (let i = 0; i < scripts.length; i++) {
       retval += `\n${i+1}. ${scripts[i]}`;
@@ -124,21 +123,21 @@ export class TestingConsole {
     return retval;
   }
   static #loadModule(url, callback) {
-    if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
-    TestingConsole.#loadScriptFile(url, 'module', callback);
+    if (!this.#initiated) { throw new Error("TestingConsole not initiated!"); }
+    this.#loadScriptFile(url, 'module', callback);
   }
   static #reloadModule(index) {
-    if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
-    let modules = TestingConsole.#loadedScripts.filter(s => s.type === 'module');
+    if (!this.#initiated) { throw new Error("TestingConsole not initiated!"); }
+    let modules = this.#loadedScripts.filter(s => s.type === 'module');
     if (index <= 0 || index > modules.length) {
       return 'Module index is out of range!';
     }
     let mod = modules[index - 1];
-    return TestingConsole.loadModule(mod.src);
+    return this.loadModule(mod.src);
   }
   static #listModules() {
-    if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
-    let modules = TestingConsole.#loadedScripts.filter(s => s.type === 'module').map(m => m.src);
+    if (!this.#initiated) { throw new Error("TestingConsole not initiated!"); }
+    let modules = this.#loadedScripts.filter(s => s.type === 'module').map(m => m.src);
     let retval = `Loaded modules (${modules.length}):`;
     for (let i = 0; i < modules.length; i++) {
       retval += `\n${i+1}. ${modules[i]}`;
@@ -146,21 +145,21 @@ export class TestingConsole {
     return retval;
   }
   static #loadStylesheet(url) {
-    if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
-    TestingConsole.#loadStylesheetFile(url);
+    if (!this.#initiated) { throw new Error("TestingConsole not initiated!"); }
+    this.#loadStylesheetFile(url);
   }
   static #reloadStylesheet(index) {
-    if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
-    let sheets = TestingConsole.#loadedStylesheets;
+    if (!this.#initiated) { throw new Error("TestingConsole not initiated!"); }
+    let sheets = this.#loadedStylesheets;
     if (index <= 0 || index > sheets.length) {
       return 'Stylesheet index is out of range!';
     }
     let sheet = sheets[index - 1];
-    return TestingConsole.loadStylesheet(sheet.href);
+    return this.loadStylesheet(sheet.href);
   }
   static #listStylesheets() {
-    if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
-    let sheets = TestingConsole.#loadedStylesheets.map(s => s.href);
+    if (!this.#initiated) { throw new Error("TestingConsole not initiated!"); }
+    let sheets = this.#loadedStylesheets.map(s => s.href);
     let retval = `Loaded stylesheets (${sheets.length}):`;
     for (let i = 0; i < sheets.length; i++) {
       retval += `\n${i+1}. ${sheets[i]}`;
@@ -169,22 +168,22 @@ export class TestingConsole {
   }
 
   static #loadStylesheetFile(url) {
-    if (!TestingConsole.#initiated) { throw new Error("TestingConsole not initiated!"); }
+    if (!this.#initiated) { throw new Error("TestingConsole not initiated!"); }
     const linkElement = document.createElement('link');
     linkElement.rel = "stylesheet";
     linkElement.type = "text/css";
     linkElement.href = url;
-    TestingConsole.#loadedStylesheets.push(document.head.appendChild(linkElement));
+    this.#loadedStylesheets.push(document.head.appendChild(linkElement));
   }
   static #loadScriptFile(url, type, callback) {
-    const existing = TestingConsole.#loadedScripts.find(s => s.src === url);
+    const existing = this.#loadedScripts.find(s => s.src === url);
     const scriptElement = document.createElement('script');
     scriptElement.onreadystatechange = callback;
     scriptElement.onload = callback;
     scriptElement.type = type;
     scriptElement.src = url;
     if (!existing) {
-      TestingConsole.#loadedScripts.push({
+      this.#loadedScripts.push({
         src: url,
         type: type,
         counter: 1,
@@ -197,6 +196,10 @@ export class TestingConsole {
     }
   }
 
+	static #getMessageObj(message, options = undefined) {
+		const opts = options instanceof Map ? options : new Map();
+		return { message: message, options: opts };
+	}
   static #formatArgs(args) {
     if (args.length === 0) return;
     const [first, ...rest] = args;
@@ -206,22 +209,22 @@ export class TestingConsole {
       let i = 0;
       const formatted = first.replace(/%[sdifo]/g, () => {
         const val = rest[i++];
-        return TestingConsole.#formatArg(val);
+        return this.#formatArg(val);
       });
       msgParts.push(formatted);
       for (let j = i; j < rest.length; j++) {
-        msgParts.push(TestingConsole.#formatArg(rest[j]));
+        msgParts.push(this.#formatArg(rest[j]));
       }
     } else {
-      msgParts.push(TestingConsole.#formatArg(first));
-      rest.forEach((arg) => { msgParts.push(TestingConsole.#formatArg(arg)); });
+      msgParts.push(this.#formatArg(first));
+      rest.forEach((arg) => { msgParts.push(this.#formatArg(arg)); });
     }
-    return { message: msgParts.join(' '), options: opts };
+    return this.#getMessageObj(msgParts.join(' '),  opts);
   }
   static #formatArg(arg) {
     if (arg === null) return 'null';
     if (arg === undefined) return 'undefined';
-    if (typeof arg === 'object') return TestingConsole.#formatObj(arg);
+    if (typeof arg === 'object') return this.#formatObj(arg);
     if (typeof arg === 'symbol') return arg.toString();
     if (typeof arg === 'function') return arg.toString();
     return String(arg);
@@ -236,25 +239,25 @@ export class TestingConsole {
   }
 
   static #overrideConsole() {
-    console.init = () => TestingConsole.init();
-    console.clear = () => TestingConsole.#clear();
-    console.log = (...args) => TestingConsole.#log([...args]);
-    console.info = (...args) => TestingConsole.#info([...args]);
-    console.warn = (...args) => TestingConsole.#warn([...args]);
-    console.error = (...args) => TestingConsole.#error([...args]);
-    console.enableStdConsole = () => TestingConsole.#enableStdConsole();
-    console.disableStdConsole = () => TestingConsole.#disableStdConsole();
-    console.printUsingTimeouts =  () => TestingConsole.#printUsingTimeouts();
-    console.printUsingAnimations = () => TestingConsole.#printUsingAnimations();
-    console.loadScript = (url, callback) => TestingConsole.#loadScript(url, callback);
-    console.reloadScript = (index) => { return TestingConsole.#reloadScript(index); };
-    console.listScripts = () => { return TestingConsole.#listScripts(); };
-    console.loadModule = (url, callback) => { TestingConsole.#loadModule(url, callback); };
-    console.reloadModule = (index) => { return TestingConsole.#reloadModule(index); };
-    console.listModules = () => { return TestingConsole.#listModules(); };
-    console.loadStylesheet = (url) => TestingConsole.#loadStylesheet(url);
-    console.reloadStylesheet = (index) => { return TestingConsole.#reloadStylesheet(index); };
-    console.listStylesheets = () => { return TestingConsole.#listStylesheets(); };
+    console.init = () => this.init();
+    console.clear = () => this.#clear();
+    console.log = (...args) => this.#log([...args]);
+    console.info = (...args) => this.#info([...args]);
+    console.warn = (...args) => this.#warn([...args]);
+    console.error = (...args) => this.#error([...args]);
+    console.enableStdConsole = () => this.#enableStdConsole();
+    console.disableStdConsole = () => this.#disableStdConsole();
+    console.printUsingTimeouts =  () => this.#printUsingTimeouts();
+    console.printUsingAnimations = () => this.#printUsingAnimations();
+    console.loadScript = (url, callback) => this.#loadScript(url, callback);
+    console.reloadScript = (index) => { return this.#reloadScript(index); };
+    console.listScripts = () => { return this.#listScripts(); };
+    console.loadModule = (url, callback) => this.#loadModule(url, callback);
+    console.reloadModule = (index) => { return this.#reloadModule(index); };
+    console.listModules = () => { return this.#listModules(); };
+    console.loadStylesheet = (url) => this.#loadStylesheet(url);
+    console.reloadStylesheet = (index) => { return this.#reloadStylesheet(index); };
+    console.listStylesheets = () => { return this.#listStylesheets(); };
     console.help = function () {
       const availableFunctions = [];
       availableFunctions.push('console.init(stdEnabled)');
