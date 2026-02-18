@@ -171,7 +171,7 @@ MIT License — free to use, modify, and share.
 
 ## 🔬 Examples
 
-Floow links below and see **TestingConsole** examples in action:
+Check links below and see **TestingConsole** examples in action:
 
 *  **Potions Brewery**:  https://boughpohpue.github.io/brewery/test_compiled/test.html
 *  **JFATHER**:          https://boughpohpue.github.io/jfather.js/tests/compiled/test.html
